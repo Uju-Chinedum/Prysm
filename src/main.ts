@@ -13,7 +13,7 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle('Prysm API')
-    .setDescription('API documentation for Prysm')
+    .setDescription('Project management API')
     .setVersion('1.0')
     .addTag('Prysm')
     .build();
