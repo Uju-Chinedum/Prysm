@@ -57,7 +57,7 @@ npm install
 
 ### Environment Variables
 
-See `.env,example` file at root of project and add them to your `.env` file.
+See `.env.example` file at root of project and add them to your `.env` file.
 
 ### Running Locally
 
