@@ -35,7 +35,7 @@ Prysm follows a modular NestJS architecture with a focus on maintainability and 
 
 - **Backend Framework:** NestJS
 - **Database:** PostgreSQL
-- **ORM:** Prisma or Sequelize
+- **ORM:** Prisma
 - **Caching / Queues:** Redis + Bull
 - **Authentication:** JWT (Access + Refresh Tokens), Cookies
 
@@ -62,7 +62,8 @@ See `.env.example` file at root of project and add them to your `.env` file.
 ### Running Locally
 
 ```sh
-npm run migrate:dev:up   # Run database migrations
+npm run gen:migration   # Run database migrations
+npm run gen:client   # Create Prisma Client
 npm run start:dev # Start NestJS in development mode
 ```
 

@@ -7,8 +7,13 @@ import { AppModule } from './components/app/app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-
   const configService = app.get(ConfigService);
+
+  app.setGlobalPrefix('api/v1');  // Set global API prefix
+  app.enableCors({
+    origin: configService.get<string>('CORS_ORIGIN') || 'http://localhost:3000',
+    credentials: true,
+  });
   app.use(cookieParser());
 
   const config = new DocumentBuilder()
@@ -21,7 +26,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/v1', app, document);
 
-  const port = configService.get<number>('PORT') ?? 3000;
+  const port = configService.get<number>('PORT') ?? 5000;
 
   await app.listen(port);
   console.log(`Server is listening on port ${port}`);

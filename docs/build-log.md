@@ -1,5 +1,6 @@
 # Prysm Build Log
 
-## 17-02-2026
+## 19-02-2026
 
 - Started modeling the tables
+- Creating the register function
