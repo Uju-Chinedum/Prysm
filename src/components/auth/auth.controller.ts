@@ -29,6 +29,7 @@ export class AuthController {
   }
 
   @Post('signin')
+  @HttpCode(HttpStatus.OK)
   async login(
     @Body() body: SignInDto,
     @Req() req: Request,
@@ -37,10 +38,18 @@ export class AuthController {
     return this.authService.signIn(req, res, body);
   }
 
-  // @UseGuards(UserGuard)
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     return this.authService.refresh(req, res);
+  }
+
+  @Post('signout')
+  @HttpCode(HttpStatus.OK)
+  async signout(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return this.authService.signout(req, res);
   }
 }

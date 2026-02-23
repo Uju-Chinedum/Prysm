@@ -33,3 +33,4 @@
 - Abstracted functions similar to both signToken and refresh
 - Built refresh token model to accomodate multiple refresh tokens per user for multiple devices
 - Changed system to use jti (JWT ID) for refresh token lookup
+- Implemented signout functionality

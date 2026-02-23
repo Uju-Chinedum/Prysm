@@ -229,4 +229,23 @@ export class AuthService {
 
     return { message: 'Tokens refreshed successfully' };
   }
+
+  async signout(req: Request, res: Response) {
+    const refreshToken = req.cookies?.refreshToken;
+
+    if (refreshToken) {
+      const payload = this.jwt.decode(refreshToken) as any;
+
+      if (payload?.jti) {
+        await this.prisma.refreshToken.deleteMany({
+          where: { jti: payload.jti },
+        });
+      }
+    }
+
+    res.clearCookie('accessToken');
+    res.clearCookie('refreshToken');
+
+    return { message: 'Signed out successfully' };
+  }
 }
