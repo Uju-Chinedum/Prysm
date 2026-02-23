@@ -9,7 +9,6 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
 
-  app.setGlobalPrefix('api/v1');  // Set global API prefix
   app.enableCors({
     origin: configService.get<string>('CORS_ORIGIN') || 'http://localhost:3000',
     credentials: true,

@@ -6,6 +6,8 @@ import type { Request, Response } from 'express';
 
 import { SignUpDto } from './dto/signup.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { SignInDto } from './dto/signin.dto';
+import { User } from 'src/types/app';
 
 @Injectable()
 export class AuthService {
@@ -15,16 +17,11 @@ export class AuthService {
     private jwt: JwtService,
   ) {}
 
-  private async signToken(
-    req: Request,
-    res: Response,
-    userId: string,
-    email: string,
-  ) {
+  private async signToken(req: Request, res: Response, user: User) {
     try {
       const payload = {
-        sub: userId,
-        email,
+        sub: user.id,
+        email: user.email,
       };
 
       const secret = this.config.get('JWT_SECRET');
@@ -61,9 +58,12 @@ export class AuthService {
         expires: new Date(Date.now() + sevenDays),
       });
 
+      // remove passwrord from user object before returning
+      const { password, ...safeUser } = user;
+
       return {
         message: 'Signed In Successfully',
-        data: { userId, email, accessToken },
+        data: safeUser,
       };
     } catch (error) {
       throw error;
@@ -93,6 +93,28 @@ export class AuthService {
         password: hashedPassword,
       },
     });
-    return this.signToken(req, res, user.id, user.email);
+    return this.signToken(req, res, user);
+  }
+
+  async signIn(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+    dto: SignInDto,
+  ) {
+    const { email, password } = dto;
+
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    });
+    if (!user) {
+      throw new BadRequestException('Invalid credentials');
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      throw new BadRequestException('Invalid credentials');
+    }
+
+    return this.signToken(req, res, user);
   }
 }

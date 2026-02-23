@@ -18,3 +18,11 @@
 - Updated .gitignore for Prisma generated files
 - Removed unused DTOs and entities
 - Changed license from UNLICENSED to MIT
+
+## 23-02-2026
+
+- Implemented signin functionality
+- Created a simple homepage
+- Removed accessToken from signup and signin response
+- Built interfaces for models
+- Refactored signToken function to return User interface
