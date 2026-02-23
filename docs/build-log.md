@@ -28,3 +28,4 @@
 - Refactored signToken function to return User interface
 - Modelled error log
 - Built exception filter and applied it
+- Built user guard and jwt strategy
