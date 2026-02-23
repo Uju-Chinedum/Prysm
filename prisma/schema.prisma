@@ -92,6 +92,7 @@ model ErrorLog {
 
 model RefreshToken {
   id String @id @default(cuid())
+  jti String @unique
   token String
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId String

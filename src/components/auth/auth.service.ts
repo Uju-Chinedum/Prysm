@@ -14,6 +14,7 @@ import { SignUpDto } from './dto/signup.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { SignInDto } from './dto/signin.dto';
 import { User } from 'src/types/app';
+import { randomUUID } from 'node:crypto';
 
 @Injectable()
 export class AuthService {
@@ -28,6 +29,7 @@ export class AuthService {
     config: ConfigService,
     user: User,
   ) {
+    const jti = randomUUID();
     const payload = { sub: user.id, email: user.email };
 
     const accessToken = await jwtService.signAsync(payload, {
@@ -35,12 +37,15 @@ export class AuthService {
       expiresIn: config.get('JWT_EXPIRES_IN'),
     });
 
-    const refreshToken = await jwtService.signAsync(payload, {
-      secret: config.get('REFRESH_TOKEN_SECRET'),
-      expiresIn: config.get('REFRESH_TOKEN_EXPIRES_IN'),
-    });
+    const refreshToken = await jwtService.signAsync(
+      { ...payload, jti },
+      {
+        secret: config.get('REFRESH_TOKEN_SECRET'),
+        expiresIn: config.get('REFRESH_TOKEN_EXPIRES_IN'),
+      },
+    );
 
-    return { accessToken, refreshToken };
+    return { accessToken, refreshToken, jti };
   }
 
   private setTokensAsCookies(
@@ -75,6 +80,7 @@ export class AuthService {
   private async saveRefreshToken(
     userId: string,
     refreshToken: string,
+    jti: string,
     expiresAt: Date,
   ) {
     const hashedToken = await bcrypt.hash(refreshToken, 10);
@@ -82,6 +88,7 @@ export class AuthService {
     await this.prisma.refreshToken.create({
       data: {
         token: hashedToken,
+        jti,
         userId,
         expiresAt,
       },
@@ -90,17 +97,16 @@ export class AuthService {
 
   private async signToken(req: Request, res: Response, user: User) {
     try {
-      const { accessToken, refreshToken } = await this.createTokens(
+      const { accessToken, refreshToken, jti } = await this.createTokens(
         this.jwt,
         this.config,
         user,
       );
 
-      const expiresAt = new Date(
-        Date.now() + this.config.get<number>('REFRESH_TOKEN_EXPIRES_IN')!,
-      );
+      const refreshTtl = Number(this.config.get('REFRESH_TOKEN_EXPIRES_IN'))!;
+      const expiresAt = new Date(Date.now() + refreshTtl);
 
-      await this.saveRefreshToken(user.id, refreshToken, expiresAt);
+      await this.saveRefreshToken(user.id, refreshToken, jti, expiresAt);
 
       req.user = user;
 
@@ -180,49 +186,44 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const tokens = await this.prisma.refreshToken.findMany({
-      where: {
-        userId: payload.sub,
-        expiresAt: { gt: new Date() },
-      },
+    const { sub: userId, jti } = payload;
+
+    const tokenRecord = await this.prisma.refreshToken.findUnique({
+      where: { jti },
     });
 
-    let validTokenRecord;
-
-    for (const tokenRecord of tokens) {
-      const isMatch = await bcrypt.compare(refreshToken, tokenRecord.token);
-
-      if (isMatch) {
-        validTokenRecord = tokenRecord;
-        break;
-      }
-    }
-
-    if (!validTokenRecord) {
+    if (!tokenRecord || tokenRecord.expiresAt <= new Date()) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // delete old token
+    const isMatch = await bcrypt.compare(refreshToken, tokenRecord.token);
+    if (!isMatch) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    // delete old record
     await this.prisma.refreshToken.delete({
-      where: { id: validTokenRecord.id },
+      where: { id: tokenRecord.id },
     });
 
     const user = await this.prisma.user.findUnique({
-      where: { id: payload.sub },
+      where: { id: userId },
     });
 
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const { accessToken, refreshToken: newRefreshToken } =
-      await this.createTokens(this.jwt, this.config, user);
+    const {
+      accessToken,
+      refreshToken: newRefreshToken,
+      jti: newJti,
+    } = await this.createTokens(this.jwt, this.config, user);
 
-    const expiresAt = new Date(
-      Date.now() + this.config.get<number>('REFRESH_TOKEN_EXPIRES_IN')!,
-    );
+    const refreshTtl = Number(this.config.get('REFRESH_TOKEN_EXPIRES_IN'))!;
+    const expiresAt = new Date(Date.now() + refreshTtl);
 
-    await this.saveRefreshToken(user.id, newRefreshToken, expiresAt);
+    await this.saveRefreshToken(user.id, newRefreshToken, newJti, expiresAt);
 
     this.setTokensAsCookies(res, accessToken, newRefreshToken, this.config);
 
