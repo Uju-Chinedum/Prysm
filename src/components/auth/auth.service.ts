@@ -1,4 +1,10 @@
-import { BadRequestException, Injectable, Req, Res } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Req,
+  Res,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
@@ -17,52 +23,70 @@ export class AuthService {
     private jwt: JwtService,
   ) {}
 
+  private async createTokens(
+    jwtService: JwtService,
+    config: ConfigService,
+    user: User,
+  ) {
+    const payload = { sub: user.id, email: user.email };
+
+    const accessToken = await jwtService.signAsync(payload, {
+      secret: config.get('JWT_SECRET'),
+      expiresIn: config.get('JWT_EXPIRES_IN'),
+    });
+
+    const refreshToken = await jwtService.signAsync(payload, {
+      secret: config.get('REFRESH_TOKEN_SECRET'),
+      expiresIn: config.get('REFRESH_TOKEN_EXPIRES_IN'),
+    });
+
+    return { payload, accessToken, refreshToken };
+  }
+
+  private setTokensAsCookies(
+    res: Response,
+    accessToken: string,
+    refreshToken: string,
+    config: ConfigService,
+  ) {
+    const accessAge = config.get<number>('JWT_EXPIRES_IN');
+    const refreshAge = config.get<number>('REFRESH_TOKEN_EXPIRES_IN');
+
+    const secure = config.get('NODE_ENV') === 'production';
+    const sameSite = secure ? 'none' : 'lax';
+
+    res.cookie('accessToken', accessToken, {
+      httpOnly: true,
+      secure,
+      sameSite,
+      maxAge: accessAge,
+      expires: new Date(Date.now() + accessAge!),
+    });
+
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure,
+      sameSite,
+      maxAge: refreshAge,
+      expires: new Date(Date.now() + refreshAge!),
+    });
+  }
+
   private async signToken(req: Request, res: Response, user: User) {
     try {
-      const payload = {
-        sub: user.id,
-        email: user.email,
-      };
+      const { payload, accessToken, refreshToken } = await this.createTokens(
+        this.jwt,
+        this.config,
+        user,
+      );
 
-      const secret = this.config.get('JWT_SECRET');
-      const refreshSecret = this.config.get('REFRESH_TOKEN_SECRET');
+      req.user = user;
 
-      const accessToken = await this.jwt.signAsync(payload, {
-        expiresIn: this.config.get('JWT_EXPIRES_IN'),
-        secret,
-      });
+      this.setTokensAsCookies(res, accessToken, refreshToken, this.config);
 
-      const refreshToken = await this.jwt.signAsync(payload, {
-        expiresIn: this.config.get('REFRESH_TOKEN_EXPIRES_IN'),
-        secret: refreshSecret,
-      });
-
-      req.user = payload;
-
-      const oneDay = 24 * 60 * 60 * 1000;
-      const sevenDays = 7 * oneDay;
-
-      res.cookie('accessToken', accessToken, {
-        httpOnly: true,
-        secure: this.config.get('NODE_ENV') === 'production' ? true : false,
-        sameSite: this.config.get('NODE_ENV') === 'production' ? 'none' : 'lax',
-        maxAge: oneDay,
-        expires: new Date(Date.now() + oneDay),
-      });
-
-      res.cookie('refreshToken', refreshToken, {
-        httpOnly: true,
-        secure: this.config.get('NODE_ENV') === 'production' ? true : false,
-        sameSite: this.config.get('NODE_ENV') === 'production' ? 'none' : 'lax',
-        maxAge: sevenDays,
-        expires: new Date(Date.now() + sevenDays),
-      });
-
-      // remove passwrord from user object before returning
       const { password, ...safeUser } = user;
-
       return {
-        message: 'Signed In Successfully',
+        message: 'Signed in successfully',
         data: safeUser,
       };
     } catch (error) {
@@ -116,5 +140,45 @@ export class AuthService {
     }
 
     return this.signToken(req, res, user);
+  }
+
+  async refresh(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const oldRefreshToken = req.cookies?.refreshToken;
+    if (!oldRefreshToken) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    try {
+      const payload = await this.jwt.verifyAsync(oldRefreshToken, {
+        secret: this.config.get('REFRESH_TOKEN_SECRET'),
+      });
+
+      const user = await this.prisma.user.findUnique({
+        where: { id: payload.sub },
+      });
+
+      if (!user) throw new UnauthorizedException('User not found');
+
+      const { accessToken, refreshToken } = await this.createTokens(
+        this.jwt,
+        this.config,
+        user,
+      );
+
+      this.setTokensAsCookies(res, accessToken, refreshToken, this.config);
+
+      return {
+        message: 'Tokens refreshed successfully',
+        data: null,
+      };
+    } catch (err) {
+      throw new UnauthorizedException(
+        'Invalid credentials',
+        'Invalid or expired refresh token',
+      );
+    }
   }
 }

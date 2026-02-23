@@ -29,3 +29,5 @@
 - Modelled error log
 - Built exception filter and applied it
 - Built user guard and jwt strategy
+- Implemented refresh function to refresh access tokens and get new refresh token
+- Abstreacted functions similar to both signToken and refresh
