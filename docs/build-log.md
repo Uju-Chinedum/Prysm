@@ -4,3 +4,17 @@
 
 - Started modeling the tables
 - Creating the register function
+
+## 21-02-2026
+
+- Added AuthModule with JWT support
+- Implemented signup functionality in AuthController and AuthService
+- Updated Prisma schema and created initial migration for PostgreSQL
+- Added Prisma adapter and enhanced PrismaService
+- Set global API prefix and CORS settings in main.ts
+- Extended Express Request type to include user information
+- Updated README to reflect new migration commands and ORM usage
+- Created .env.example for environment variables
+- Updated .gitignore for Prisma generated files
+- Removed unused DTOs and entities
+- Changed license from UNLICENSED to MIT
