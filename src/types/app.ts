@@ -63,3 +63,13 @@ export interface Task {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export interface ErrorLog {
+  id: string;
+  level: string;
+  name: string;
+  message: string;
+  stack?: string;
+  context?: string;
+  timestamp: Date;
+}

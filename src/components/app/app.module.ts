@@ -4,6 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from '../auth/auth.module';
+import { GlobalModule } from '../global/global.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { AuthModule } from '../auth/auth.module';
       envFilePath: ['.env'],
     }),
     AuthModule,
+    GlobalModule,
   ],
   controllers: [AppController],
   providers: [AppService],

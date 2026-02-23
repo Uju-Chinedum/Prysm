@@ -26,3 +26,5 @@
 - Removed accessToken from signup and signin response
 - Built interfaces for models
 - Refactored signToken function to return User interface
+- Modelled error log
+- Built exception filter and applied it
