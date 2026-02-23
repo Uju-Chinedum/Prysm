@@ -7,7 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { Prisma } from '@prisma/client';
+import { Prisma } from 'generated/prisma/client';
 
 import { GlobalService } from 'src/components/global/global.service';
 
