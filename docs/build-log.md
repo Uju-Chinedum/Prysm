@@ -30,4 +30,5 @@
 - Built exception filter and applied it
 - Built user guard and jwt strategy
 - Implemented refresh function to refresh access tokens and get new refresh token
-- Abstreacted functions similar to both signToken and refresh
+- Abstracted functions similar to both signToken and refresh
+- Built refresh token model to accomodate multiple refresh tokens per user for multiple devices

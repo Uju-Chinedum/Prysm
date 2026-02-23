@@ -40,7 +40,7 @@ export class AuthService {
       expiresIn: config.get('REFRESH_TOKEN_EXPIRES_IN'),
     });
 
-    return { payload, accessToken, refreshToken };
+    return { accessToken, refreshToken };
   }
 
   private setTokensAsCookies(
@@ -72,13 +72,35 @@ export class AuthService {
     });
   }
 
+  private async saveRefreshToken(
+    userId: string,
+    refreshToken: string,
+    expiresAt: Date,
+  ) {
+    const hashedToken = await bcrypt.hash(refreshToken, 10);
+
+    await this.prisma.refreshToken.create({
+      data: {
+        token: hashedToken,
+        userId,
+        expiresAt,
+      },
+    });
+  }
+
   private async signToken(req: Request, res: Response, user: User) {
     try {
-      const { payload, accessToken, refreshToken } = await this.createTokens(
+      const { accessToken, refreshToken } = await this.createTokens(
         this.jwt,
         this.config,
         user,
       );
+
+      const expiresAt = new Date(
+        Date.now() + this.config.get<number>('REFRESH_TOKEN_EXPIRES_IN')!,
+      );
+
+      await this.saveRefreshToken(user.id, refreshToken, expiresAt);
 
       req.user = user;
 
@@ -142,43 +164,68 @@ export class AuthService {
     return this.signToken(req, res, user);
   }
 
-  async refresh(
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    const oldRefreshToken = req.cookies?.refreshToken;
-    if (!oldRefreshToken) {
+  async refresh(req: Request, res: Response) {
+    const refreshToken = req.cookies?.refreshToken;
+    if (!refreshToken) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    let payload: any;
+
     try {
-      const payload = await this.jwt.verifyAsync(oldRefreshToken, {
+      payload = await this.jwt.verifyAsync(refreshToken, {
         secret: this.config.get('REFRESH_TOKEN_SECRET'),
       });
-
-      const user = await this.prisma.user.findUnique({
-        where: { id: payload.sub },
-      });
-
-      if (!user) throw new UnauthorizedException('User not found');
-
-      const { accessToken, refreshToken } = await this.createTokens(
-        this.jwt,
-        this.config,
-        user,
-      );
-
-      this.setTokensAsCookies(res, accessToken, refreshToken, this.config);
-
-      return {
-        message: 'Tokens refreshed successfully',
-        data: null,
-      };
-    } catch (err) {
-      throw new UnauthorizedException(
-        'Invalid credentials',
-        'Invalid or expired refresh token',
-      );
+    } catch {
+      throw new UnauthorizedException('Invalid credentials');
     }
+
+    const tokens = await this.prisma.refreshToken.findMany({
+      where: {
+        userId: payload.sub,
+        expiresAt: { gt: new Date() },
+      },
+    });
+
+    let validTokenRecord;
+
+    for (const tokenRecord of tokens) {
+      const isMatch = await bcrypt.compare(refreshToken, tokenRecord.token);
+
+      if (isMatch) {
+        validTokenRecord = tokenRecord;
+        break;
+      }
+    }
+
+    if (!validTokenRecord) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    // delete old token
+    await this.prisma.refreshToken.delete({
+      where: { id: validTokenRecord.id },
+    });
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const { accessToken, refreshToken: newRefreshToken } =
+      await this.createTokens(this.jwt, this.config, user);
+
+    const expiresAt = new Date(
+      Date.now() + this.config.get<number>('REFRESH_TOKEN_EXPIRES_IN')!,
+    );
+
+    await this.saveRefreshToken(user.id, newRefreshToken, expiresAt);
+
+    this.setTokensAsCookies(res, accessToken, newRefreshToken, this.config);
+
+    return { message: 'Tokens refreshed successfully' };
   }
 }

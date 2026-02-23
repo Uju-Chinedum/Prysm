@@ -19,6 +19,7 @@ model User {
   email String @unique
   password String
   name String
+  refreshTokens RefreshToken[]
   memberships Membership[]
   tasks Task[] @relation("AssigneeTasks")
   createdAt DateTime @default(now())
@@ -87,6 +88,15 @@ model ErrorLog {
   stack String?
   context String?
   timestamp DateTime @default(now())
+}
+
+model RefreshToken {
+  id String @id @default(cuid())
+  token String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 }
 
 enum Role {
