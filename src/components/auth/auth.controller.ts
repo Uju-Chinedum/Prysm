@@ -13,13 +13,18 @@ import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { SignUpDto } from './dto/signup.dto';
 import { SignInDto } from './dto/signin.dto';
-import { UserGuard } from './guard';
+import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Authentication')
 @Controller('api/v1/auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('signup')
+  @ApiOperation({ summary: 'Register a new user' })
+  @ApiBody({ type: SignUpDto })
+  @ApiResponse({ status: 201, description: 'User successfully registered' })
+  @ApiResponse({ status: 400, description: 'Invalid input data' })
   async create(
     @Body() body: SignUpDto,
     @Req() req: Request,
@@ -29,6 +34,10 @@ export class AuthController {
   }
 
   @Post('signin')
+  @ApiOperation({ summary: 'Login a user' })
+  @ApiBody({ type: SignInDto })
+  @ApiResponse({ status: 200, description: 'User successfully logged in.' })
+  @ApiResponse({ status: 401, description: 'Invalid credentials.' })
   @HttpCode(HttpStatus.OK)
   async login(
     @Body() body: SignInDto,
@@ -39,6 +48,12 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @ApiOperation({ summary: 'Refresh authentication tokens' })
+  @ApiResponse({ status: 200, description: 'Token refreshed successfully.' })
+  @ApiResponse({
+    status: 401,
+    description: 'Invalid or expired refresh token.',
+  })
   @HttpCode(HttpStatus.OK)
   refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     return this.authService.refresh(req, res);
@@ -46,6 +61,8 @@ export class AuthController {
 
   @Post('signout')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Sign out the user' })
+  @ApiResponse({ status: 200, description: 'User signed out successfully.' })
   async signout(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
