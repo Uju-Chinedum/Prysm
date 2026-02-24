@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  HttpStatus,
   Injectable,
   Req,
   Res,
@@ -13,8 +14,10 @@ import { randomUUID } from 'node:crypto';
 
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { PrismaService } from '../prisma/prisma.service';
-import { SignInDto } from './dto/signin.dto';
-import { User } from 'src/types/app';
+import { SignInDto, SignInResponseDto } from './dto/signin.dto';
+import { User } from 'src/types/service';
+import { AppResponse } from 'src/types/app';
+import { AppUtils } from 'src/common/utils';
 
 @Injectable()
 export class AuthService {
@@ -95,7 +98,12 @@ export class AuthService {
     });
   }
 
-  private async signToken(req: Request, res: Response, user: User) {
+  private async signToken(
+    req: Request,
+    res: Response,
+    user: User,
+    statusCode: HttpStatus,
+  ): Promise<AppResponse<SignInResponseDto>> {
     try {
       const { accessToken, refreshToken, jti } = await this.createTokens(
         this.jwt,
@@ -108,15 +116,13 @@ export class AuthService {
 
       await this.saveRefreshToken(user.id, refreshToken, jti, expiresAt);
 
-      req.user = user;
+      const userPayload = { id: user.id, email: user.email, name: user.name };
+
+      req.user = userPayload;
 
       this.setTokensAsCookies(res, accessToken, refreshToken, this.config);
 
-      const { password, ...safeUser } = user;
-      return {
-        message: 'Signed in successfully',
-        data: safeUser,
-      };
+      return AppUtils.successResponse('Signed In Successfully', userPayload, statusCode);
     } catch (error) {
       throw error;
     }
@@ -145,7 +151,7 @@ export class AuthService {
         password: hashedPassword,
       },
     });
-    return this.signToken(req, res, user);
+    return this.signToken(req, res, user, HttpStatus.CREATED);
   }
 
   async signIn(
@@ -167,10 +173,10 @@ export class AuthService {
       throw new BadRequestException('Invalid credentials');
     }
 
-    return this.signToken(req, res, user);
+    return this.signToken(req, res, user, HttpStatus.OK);
   }
 
-  async refresh(req: Request, res: Response) {
+  async refresh(req: Request, res: Response): Promise<AppResponse<null>> {
     const refreshToken = req.cookies?.refreshToken;
     if (!refreshToken) {
       throw new UnauthorizedException('Invalid credentials');
@@ -227,10 +233,10 @@ export class AuthService {
 
     this.setTokensAsCookies(res, accessToken, newRefreshToken, this.config);
 
-    return { message: 'Tokens refreshed successfully' };
+    return AppUtils.successResponse('Token refreshed successfully', null);
   }
 
-  async signout(req: Request, res: Response) {
+  async signout(req: Request, res: Response): Promise<AppResponse<null>> {
     const refreshToken = req.cookies?.refreshToken;
 
     if (refreshToken) {
@@ -246,6 +252,6 @@ export class AuthService {
     res.clearCookie('accessToken');
     res.clearCookie('refreshToken');
 
-    return { message: 'Signed out successfully' };
+    return AppUtils.successResponse('Signed out successfully', null);
   }
 }

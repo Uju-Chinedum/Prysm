@@ -19,3 +19,23 @@ export class SignInDto {
   @MinLength(6, { message: 'Password must be at least 6 characters long.' })
   password!: string;
 }
+
+export class SignInResponseDto {
+  @ApiProperty({
+    description: 'The unique identifier of the user',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  id!: string;
+
+  @ApiProperty({
+    description: 'The email of the user',
+    example: 'test@example.com',
+  })
+  email!: string;
+
+  @ApiProperty({
+    description: 'The name of the user',
+    example: 'John Doe',
+  })
+  name!: string;
+}

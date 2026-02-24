@@ -40,3 +40,4 @@
 - Implemented getMe functionality to get user profile
 - Created a CurrentUser decorator so controller does not depend on Request and service does not know about HTTP
 - Built a new interface for authenticated users so as not to send back full user data
+- Built global response shapes for success and error responses

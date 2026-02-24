@@ -10,6 +10,8 @@ import { Response } from 'express';
 import { Prisma } from 'generated/prisma/client';
 
 import { GlobalService } from 'src/components/global/global.service';
+import { ErrorData } from 'src/types/app';
+import { AppUtils } from '../utils';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
@@ -123,11 +125,14 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       ...(contextData && { data: contextData }),
     });
 
-    response.status(status).json({
-      statusCode: status,
+    const errorData: ErrorData = {
       name,
-      message,
+      message: messageStr,
       timestamp: new Date().toISOString(),
-    });
+    };
+
+    const error = AppUtils.errorResponse(errorData, status);
+
+    response.status(status).json(error);
   }
 }
