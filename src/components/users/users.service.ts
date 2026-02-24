@@ -51,7 +51,15 @@ export class UsersService {
     );
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+  async deleteMe(userId: string): Promise<AppResponse<null>> {
+    try {
+      await this.prisma.user.delete({ where: { id: userId } });
+      return AppUtils.successResponse(
+        'User Account Deleted Successfully',
+        null,
+      );
+    } catch (error) {
+      throw new NotFoundException('User Not Found');
+    }
   }
 }

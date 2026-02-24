@@ -5,7 +5,6 @@ import {
   Patch,
   Param,
   Delete,
-  Req,
   UseGuards,
 } from '@nestjs/common';
 
@@ -16,11 +15,11 @@ import { UserGuard } from '../auth/guard';
 import { CurrentUser } from '../auth/decorator';
 
 @ApiTags('Users')
+@UseGuards(UserGuard)
 @Controller('api/v1/users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @UseGuards(UserGuard)
   @Get('me')
   @ApiOperation({ summary: "Get the authenticated user's profile" })
   @ApiResponse({
@@ -32,7 +31,6 @@ export class UsersController {
     return this.usersService.getMe(userId);
   }
 
-  @UseGuards(UserGuard)
   @Patch('me')
   @ApiOperation({ summary: "Update the authenticated user's profile" })
   @ApiBody({ type: UpdateUserDto })
@@ -41,7 +39,7 @@ export class UsersController {
     description: 'User profile updated successfully.',
   })
   @ApiResponse({ status: 401, description: 'User not authenticated.' })
-  update(
+  updateMe(
     @CurrentUser('id') userId: string,
     @Body() updateUserDto: UpdateUserDto,
   ) {
@@ -49,7 +47,13 @@ export class UsersController {
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.usersService.remove(+id);
+  @ApiOperation({ summary: "Delete the authenticated user's profile" })
+  @ApiResponse({
+    status: 200,
+    description: 'User profile deleted successfully.',
+  })
+  @ApiResponse({ status: 401, description: 'User not authenticated.' })
+  deleteMe(@CurrentUser('id') id: string) {
+    return this.usersService.deleteMe(id);
   }
 }
