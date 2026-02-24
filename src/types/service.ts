@@ -27,6 +27,8 @@ export interface AuthenticatedUser {
   name: string;
 }
 
+export type SafeUser = Omit<User, 'password'>;
+
 export interface Organization {
   id: string;
   name: string;

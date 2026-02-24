@@ -4,32 +4,51 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { AppResponse } from 'src/types/app';
 import { AppUtils } from 'src/common/utils';
-import { AuthenticatedUser } from 'src/types/service';
+import { SafeUser } from 'src/types/service';
 
 @Injectable()
 export class UsersService {
   constructor(private prisma: PrismaService) {}
 
-  async getMe(userId: string): Promise<AppResponse<AuthenticatedUser>> {
+  async getMe(userId: string): Promise<AppResponse<SafeUser>> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        updatedAt: true,
-      },
     });
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException('User Not Found');
     }
 
-    return AppUtils.successResponse('user profile Retrieved Successfully', user)
+    const { password, ...safeUser } = user;
+
+    return AppUtils.successResponse(
+      'User Profile Retrieved Successfully',
+      safeUser,
+    );
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  async updateMe(
+    userId: string,
+    updateUserDto: UpdateUserDto,
+  ): Promise<AppResponse<SafeUser>> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+    if (!user) {
+      throw new NotFoundException('User Not Found');
+    }
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: { ...updateUserDto },
+    });
+
+    const { password, ...safeUser } = updatedUser;
+
+    return AppUtils.successResponse(
+      'User Profile Updated Successfully',
+      safeUser,
+    );
   }
 
   remove(id: number) {

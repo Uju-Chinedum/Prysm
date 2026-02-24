@@ -11,7 +11,7 @@ import {
 
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { UserGuard } from '../auth/guard';
 import { CurrentUser } from '../auth/decorator';
 
@@ -27,14 +27,25 @@ export class UsersController {
     status: 200,
     description: 'User profile retrieved successfully.',
   })
-  @ApiResponse({ status: 400, description: 'User not authenticated.' })
+  @ApiResponse({ status: 401, description: 'User not authenticated.' })
   getMe(@CurrentUser('id') userId: string) {
     return this.usersService.getMe(userId);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(+id, updateUserDto);
+  @UseGuards(UserGuard)
+  @Patch('me')
+  @ApiOperation({ summary: "Update the authenticated user's profile" })
+  @ApiBody({ type: UpdateUserDto })
+  @ApiResponse({
+    status: 200,
+    description: 'User profile updated successfully.',
+  })
+  @ApiResponse({ status: 401, description: 'User not authenticated.' })
+  update(
+    @CurrentUser('id') userId: string,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
+    return this.usersService.updateMe(userId, updateUserDto);
   }
 
   @Delete(':id')
