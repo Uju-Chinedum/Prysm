@@ -9,12 +9,12 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
 import type { Request, Response } from 'express';
+import { randomUUID } from 'node:crypto';
 
-import { SignUpDto } from './dto/signup.dto';
+import { CreateUserDto } from '../users/dto/create-user.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { SignInDto } from './dto/signin.dto';
 import { User } from 'src/types/app';
-import { randomUUID } from 'node:crypto';
 
 @Injectable()
 export class AuthService {
@@ -125,7 +125,7 @@ export class AuthService {
   async signUp(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
-    dto: SignUpDto,
+    dto: CreateUserDto,
   ) {
     const { name, email, password } = dto;
 

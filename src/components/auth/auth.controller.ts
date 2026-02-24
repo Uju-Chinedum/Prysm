@@ -6,14 +6,13 @@ import {
   Res,
   HttpCode,
   HttpStatus,
-  UseGuards,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
+import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { AuthService } from './auth.service';
-import { SignUpDto } from './dto/signup.dto';
+import { CreateUserDto } from '../users/dto/create-user.dto';
 import { SignInDto } from './dto/signin.dto';
-import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Authentication')
 @Controller('api/v1/auth')
@@ -22,11 +21,11 @@ export class AuthController {
 
   @Post('signup')
   @ApiOperation({ summary: 'Register a new user' })
-  @ApiBody({ type: SignUpDto })
+  @ApiBody({ type: CreateUserDto })
   @ApiResponse({ status: 201, description: 'User successfully registered' })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
   async create(
-    @Body() body: SignUpDto,
+    @Body() body: CreateUserDto,
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
