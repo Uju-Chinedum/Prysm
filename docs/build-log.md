@@ -42,3 +42,4 @@
 - Built a new interface for authenticated users so as not to send back full user data
 - Built global response shapes for success and error responses
 - Implemented updateMe and deleteMe
+- Implemented organization creation and assigned user who created it with OWNER role

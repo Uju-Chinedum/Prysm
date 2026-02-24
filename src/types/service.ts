@@ -38,6 +38,8 @@ export interface Organization {
   updatedAt: Date;
 }
 
+export type SafeOrganization = Omit<Organization, 'memberships' | 'projects'>;
+
 export interface Membership {
   id: string;
   user: User;
