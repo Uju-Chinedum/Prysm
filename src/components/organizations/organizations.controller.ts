@@ -54,9 +54,18 @@ export class OrganizationsController {
     return this.organizationsService.findAllForUser(id, paginationDto);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.organizationsService.findOne(+id);
+  @Get(':orgId')
+  @ApiResponse({
+    status: 200,
+    description: 'Organization retrieved successfully.',
+  })
+  @ApiResponse({ status: 401, description: 'User not authenticated.' })
+  @ApiResponse({
+    status: 400,
+    description: 'You do not have any organization with id provided',
+  })
+  findOne(@CurrentUser('id') userId: string, @Param('orgId') orgId: string) {
+    return this.organizationsService.findOne(userId, orgId);
   }
 
   @Patch(':id')

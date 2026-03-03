@@ -86,8 +86,29 @@ export class OrganizationsService {
     );
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} organization`;
+  async findOne(
+    userId: string,
+    orgId: string,
+  ): Promise<AppResponse<SafeOrganization>> {
+    const organization = await this.prisma.organization.findFirst({
+      where: {
+        id: orgId,
+        memberships: {
+          some: { userId },
+        },
+      },
+    });
+
+    if (!organization) {
+      throw new BadRequestException(
+        `You do not have any organization with id: ${orgId}`,
+      );
+    }
+
+    return AppUtils.successResponse(
+      'Organization Retrieved Successfully',
+      organization,
+    );
   }
 
   update(id: number, updateOrganizationDto: UpdateOrganizationDto) {
