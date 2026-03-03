@@ -43,3 +43,9 @@
 - Built global response shapes for success and error responses
 - Implemented updateMe and deleteMe
 - Implemented organization creation and assigned user who created it with OWNER role
+
+
+## 03-03-2026
+
+- Implemented a helper for paginated response and another helper that uses that to paginate at DB level
+- Implemented getting all organizations for a user

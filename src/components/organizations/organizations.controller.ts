@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
@@ -15,6 +16,7 @@ import { CreateOrganizationDto } from './dto/create-organization.dto';
 import { UpdateOrganizationDto } from './dto/update-organization.dto';
 import { UserGuard } from '../auth/guard';
 import { CurrentUser } from '../auth/decorator';
+import { PaginationDto } from 'src/common/dto';
 
 @UseGuards(UserGuard)
 @Controller('api/v1/organizations')
@@ -40,8 +42,16 @@ export class OrganizationsController {
   }
 
   @Get()
-  findAll() {
-    return this.organizationsService.findAll();
+  @ApiResponse({
+    status: 200,
+    description: 'List of organizations retrieved successfully.',
+  })
+  @ApiResponse({ status: 401, description: 'User not authenticated.' })
+  findAll(
+    @CurrentUser('id') id: string,
+    @Query() paginationDto: PaginationDto,
+  ) {
+    return this.organizationsService.findAllForUser(id, paginationDto);
   }
 
   @Get(':id')
