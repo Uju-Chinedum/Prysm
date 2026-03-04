@@ -9,7 +9,13 @@ import {
   UseGuards,
   Query,
 } from '@nestjs/common';
-import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiBody,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+} from '@nestjs/swagger';
 
 import { OrganizationsService } from './organizations.service';
 import { CreateOrganizationDto } from './dto/create-organization.dto';
@@ -42,6 +48,8 @@ export class OrganizationsController {
   }
 
   @Get()
+  @ApiOperation({ summary: 'Retrieve all organizations for the current user' })
+  @ApiQuery({ type: PaginationDto })
   @ApiResponse({
     status: 200,
     description: 'List of organizations retrieved successfully.',
@@ -55,6 +63,11 @@ export class OrganizationsController {
   }
 
   @Get(':orgId')
+  @ApiOperation({ summary: 'Retrieve a specific organization' })
+  @ApiParam({
+    name: 'orgId',
+    description: 'ID of the organization to retrieve',
+  })
   @ApiResponse({
     status: 200,
     description: 'Organization retrieved successfully.',
@@ -69,6 +82,11 @@ export class OrganizationsController {
   }
 
   @Patch(':orgId')
+  @ApiOperation({ summary: 'Update an existing organization' })
+  @ApiQuery({
+    name: 'orgId',
+    description: 'ID of the organization to retrieve',
+  })
   @ApiResponse({
     status: 200,
     description: 'Organization updated successfully.',
