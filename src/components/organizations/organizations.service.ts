@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   HttpStatus,
   Injectable,
   NotFoundException,
@@ -118,7 +119,7 @@ export class OrganizationsService {
     userId: string,
     orgId: string,
     updateOrganizationDto: UpdateOrganizationDto,
-  ) {
+  ): Promise<AppResponse<SafeOrganization | null>> {
     return this.prisma.$transaction(async (tx) => {
       const updated = await tx.organization.updateMany({
         where: {
@@ -145,7 +146,15 @@ export class OrganizationsService {
     });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} organization`;
+  async remove(userId: string, orgId: string): Promise<AppResponse<null>> {
+    const deleted = await this.prisma.organization.deleteMany({
+      where: { id: orgId },
+    });
+
+    if (!deleted.count) {
+      throw new NotFoundException('Organization not found');
+    }
+
+    return AppUtils.successResponse('Organization Deleted Successfully', null);
   }
 }

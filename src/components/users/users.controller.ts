@@ -11,11 +11,11 @@ import {
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { UserGuard } from '../auth/guard';
+import { AuthGuard_ } from '../auth/guard';
 import { CurrentUser } from '../auth/decorator';
 
 @ApiTags('Users')
-@UseGuards(UserGuard)
+@UseGuards(AuthGuard_)
 @Controller('api/v1/users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}

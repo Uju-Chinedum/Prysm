@@ -20,11 +20,12 @@ import {
 import { OrganizationsService } from './organizations.service';
 import { CreateOrganizationDto } from './dto/create-organization.dto';
 import { UpdateOrganizationDto } from './dto/update-organization.dto';
-import { UserGuard } from '../auth/guard';
+import { AuthGuard_ } from '../auth/guard';
 import { CurrentUser } from '../auth/decorator';
 import { PaginationDto } from 'src/common/dto';
+import { Roles, RolesGuard } from 'src/common/guards';
 
-@UseGuards(UserGuard)
+@UseGuards(AuthGuard_)
 @Controller('api/v1/organizations')
 export class OrganizationsController {
   constructor(private readonly organizationsService: OrganizationsService) {}
@@ -49,7 +50,6 @@ export class OrganizationsController {
 
   @Get()
   @ApiOperation({ summary: 'Retrieve all organizations for the current user' })
-  @ApiQuery({ type: PaginationDto })
   @ApiResponse({
     status: 200,
     description: 'List of organizations retrieved successfully.',
@@ -83,10 +83,11 @@ export class OrganizationsController {
 
   @Patch(':orgId')
   @ApiOperation({ summary: 'Update an existing organization' })
-  @ApiQuery({
+  @ApiParam({
     name: 'orgId',
     description: 'ID of the organization to retrieve',
   })
+  @ApiBody({ type: UpdateOrganizationDto })
   @ApiResponse({
     status: 200,
     description: 'Organization updated successfully.',
@@ -109,7 +110,27 @@ export class OrganizationsController {
   }
 
   @Delete(':orgId')
-  remove(@Param('id') id: string) {
-    return this.organizationsService.remove(+id);
+  @Roles('OWNER')
+  @UseGuards(RolesGuard)
+  @ApiOperation({ summary: 'Delete an existing organization' })
+  @ApiParam({
+    name: 'orgId',
+    description: 'ID of the organization to delete',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Organization updated successfully.',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'User is not authorized to delete this organization.',
+  })
+  @ApiResponse({ status: 401, description: 'User not authenticated.' })
+  @ApiResponse({
+    status: 404,
+    description: 'Organization not found',
+  })
+  remove(@CurrentUser('id') userId: string, @Param('orgId') orgId: string) {
+    return this.organizationsService.remove(userId, orgId);
   }
 }

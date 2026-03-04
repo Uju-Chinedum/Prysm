@@ -51,3 +51,5 @@
 - Implemented getting one organization
 - Implemeted updating organization
 - Added logging for Prisma db logs, hooked it into Nest Logger
+- Implemented deleting of organization
+- Created Roles Guard and Decorator to validate roles for specific endpoints
