@@ -49,3 +49,5 @@
 - Implemented a helper for paginated response and another helper that uses that to paginate at DB level
 - Implemented getting all organizations for a user
 - Implemented getting one organization
+- Implemeted updating organization
+- Added logging for Prisma db logs, hooked it into Nest Logger

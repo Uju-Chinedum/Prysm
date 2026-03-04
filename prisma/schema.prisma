@@ -98,6 +98,8 @@ model RefreshToken {
   userId String
   expiresAt DateTime
   createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 enum Role {
