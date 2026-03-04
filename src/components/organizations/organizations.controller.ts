@@ -61,22 +61,36 @@ export class OrganizationsController {
   })
   @ApiResponse({ status: 401, description: 'User not authenticated.' })
   @ApiResponse({
-    status: 400,
-    description: 'You do not have any organization with id provided',
+    status: 404,
+    description: 'Organization not found',
   })
   findOne(@CurrentUser('id') userId: string, @Param('orgId') orgId: string) {
     return this.organizationsService.findOne(userId, orgId);
   }
 
-  @Patch(':id')
+  @Patch(':orgId')
+  @ApiResponse({
+    status: 200,
+    description: 'Organization updated successfully.',
+  })
+  @ApiResponse({ status: 401, description: 'User not authenticated.' })
+  @ApiResponse({
+    status: 404,
+    description: 'Organization not found',
+  })
   update(
-    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @Param('orgId') orgId: string,
     @Body() updateOrganizationDto: UpdateOrganizationDto,
   ) {
-    return this.organizationsService.update(+id, updateOrganizationDto);
+    return this.organizationsService.update(
+      userId,
+      orgId,
+      updateOrganizationDto,
+    );
   }
 
-  @Delete(':id')
+  @Delete(':orgId')
   remove(@Param('id') id: string) {
     return this.organizationsService.remove(+id);
   }

@@ -1,4 +1,9 @@
-import { BadRequestException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpStatus,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 
 import { CreateOrganizationDto } from './dto/create-organization.dto';
 import { UpdateOrganizationDto } from './dto/update-organization.dto';
@@ -100,9 +105,7 @@ export class OrganizationsService {
     });
 
     if (!organization) {
-      throw new BadRequestException(
-        `You do not have any organization with id: ${orgId}`,
-      );
+      throw new NotFoundException('Organization not found');
     }
 
     return AppUtils.successResponse(
@@ -111,8 +114,35 @@ export class OrganizationsService {
     );
   }
 
-  update(id: number, updateOrganizationDto: UpdateOrganizationDto) {
-    return `This action updates a #${id} organization`;
+  async update(
+    userId: string,
+    orgId: string,
+    updateOrganizationDto: UpdateOrganizationDto,
+  ) {
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await tx.organization.updateMany({
+        where: {
+          id: orgId,
+          memberships: {
+            some: { userId },
+          },
+        },
+        data: updateOrganizationDto,
+      });
+
+      if (!updated.count) {
+        throw new NotFoundException('Organization not found');
+      }
+
+      const organization = await tx.organization.findUnique({
+        where: { id: orgId },
+      });
+
+      return AppUtils.successResponse(
+        'Organization Updated Successfully',
+        organization,
+      );
+    });
   }
 
   remove(id: number) {
