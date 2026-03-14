@@ -1,10 +1,10 @@
 import {
   BadRequestException,
-  ForbiddenException,
   HttpStatus,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 
 import { CreateOrganizationDto } from './dto/create-organization.dto';
 import { UpdateOrganizationDto } from './dto/update-organization.dto';
@@ -13,6 +13,7 @@ import { AppResponse, PaginatedResponse } from 'src/types/app';
 import { SafeOrganization } from 'src/types/service';
 import { AppUtils, DBUtils } from 'src/common/utils';
 import { PaginationDto } from 'src/common/dto';
+import { InviteUserDto } from './dto/invite-user.dto';
 
 @Injectable()
 export class OrganizationsService {
@@ -146,7 +147,7 @@ export class OrganizationsService {
     });
   }
 
-  async remove(userId: string, orgId: string): Promise<AppResponse<null>> {
+  async remove(orgId: string): Promise<AppResponse<null>> {
     const deleted = await this.prisma.organization.deleteMany({
       where: { id: orgId },
     });
@@ -156,5 +157,37 @@ export class OrganizationsService {
     }
 
     return AppUtils.successResponse('Organization Deleted Successfully', null);
+  }
+
+  async inviteUser(userId: string, orgId: string, dto: InviteUserDto) {
+    const { email, role } = dto;
+
+    const member = await this.prisma.membership.findFirst({
+      where: {
+        userId,
+        organizationId: orgId,
+      },
+    });
+    if (!member) {
+      throw new BadRequestException(
+        'You are not a member of this organization',
+      );
+    }
+
+    const token = randomUUID();
+
+    const invitation = await this.prisma.organizationInvitation.create({
+      data: {
+        email,
+        role,
+        organizationId: orgId,
+        token,
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24), // 24 hours
+      },
+    });
+
+    // TODO: send email with invitation link containing the token
+
+    return AppUtils.successResponse('Member Invitation Sent', null);
   }
 }

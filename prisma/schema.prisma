@@ -31,6 +31,8 @@ model Organization {
   name String
   memberships Membership[]
   projects Project[]
+  invitations OrganizationInvitation[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -97,9 +99,28 @@ model RefreshToken {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId String
   expiresAt DateTime
+
   createdAt DateTime @default(now())
 
   @@index([userId])
+}
+
+model OrganizationInvitation {
+  id String @id @default(cuid())
+  email String
+  role Role @default(MEMBER)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+
+  token String @unique
+  expiresAt DateTime
+  accepted Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([email, organizationId])
 }
 
 enum Role {

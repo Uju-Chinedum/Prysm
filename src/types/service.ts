@@ -83,3 +83,14 @@ export interface ErrorLog {
   context?: string;
   timestamp: Date;
 }
+
+export interface OrganizationInvite {
+  id: string;
+  email: string;
+  organization: Organization;
+  organizationId: string;
+  role: Role;
+  token: string;
+  expiresAt: Date;
+  createdAt: Date;
+}

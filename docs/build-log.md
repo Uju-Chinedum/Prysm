@@ -53,3 +53,8 @@
 - Added logging for Prisma db logs, hooked it into Nest Logger
 - Implemented deleting of organization
 - Created Roles Guard and Decorator to validate roles for specific endpoints
+
+## 14-03-2026
+
+- Created a model for Organization Invitation
+- Implemented creating invites for users to an organization
