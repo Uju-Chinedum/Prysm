@@ -58,3 +58,5 @@
 
 - Created a model for Organization Invitation
 - Implemented creating invites for users to an organization
+- Built an email service to send mails
+- Implemented the email service in invite creation to send invitations

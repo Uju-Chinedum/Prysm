@@ -2,9 +2,11 @@ import {
   BadRequestException,
   HttpStatus,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
+import { ConfigService } from '@nestjs/config';
 
 import { CreateOrganizationDto } from './dto/create-organization.dto';
 import { UpdateOrganizationDto } from './dto/update-organization.dto';
@@ -14,10 +16,17 @@ import { SafeOrganization } from 'src/types/service';
 import { AppUtils, DBUtils } from 'src/common/utils';
 import { PaginationDto } from 'src/common/dto';
 import { InviteUserDto } from './dto/invite-user.dto';
+import { EmailService } from 'src/common/utils/email.service';
 
 @Injectable()
 export class OrganizationsService {
-  constructor(private prisma: PrismaService) {}
+  private logger = new Logger(OrganizationsService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private email: EmailService,
+    private config: ConfigService,
+  ) {}
 
   async createOrganization(
     userId: string,
@@ -186,8 +195,20 @@ export class OrganizationsService {
       },
     });
 
-    // TODO: send email with invitation link containing the token
+    const inviteUrl = `${this.config.get<string>('BACKEND_BASE_URL')}/organizations/invites/${token}/accept`;
 
-    return AppUtils.successResponse('Member Invitation Sent', null);
+    // Send mail
+    try {
+      await this.email.sendEmail(
+        email,
+        `Organization Invite`,
+        `<p>You have been invited to join an organization.</p>
+        <p>Click here to accept: <a href="${inviteUrl}">${inviteUrl}</a></p>`,
+      );
+    } catch (error) {
+      this.logger.error('Failed to send invite email', error);
+    }
+
+    return AppUtils.successResponse('Member Invitation Sent', { inviteUrl });
   }
 }
