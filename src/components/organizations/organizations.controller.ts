@@ -9,13 +9,7 @@ import {
   UseGuards,
   Query,
 } from '@nestjs/common';
-import {
-  ApiBody,
-  ApiOperation,
-  ApiParam,
-  ApiQuery,
-  ApiResponse,
-} from '@nestjs/swagger';
+import { ApiBody, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 
 import { OrganizationsService } from './organizations.service';
 import { CreateOrganizationDto } from './dto/create-organization.dto';
@@ -81,6 +75,8 @@ export class OrganizationsController {
     return this.organizationsService.findOne(userId, orgId);
   }
 
+  @Delete(':orgId')
+  @Roles('OWNER', 'ADMIN')
   @Patch(':orgId')
   @ApiOperation({ summary: 'Update an existing organization' })
   @ApiParam({
@@ -130,7 +126,7 @@ export class OrganizationsController {
     status: 404,
     description: 'Organization not found',
   })
-  remove(@CurrentUser('id') userId: string, @Param('orgId') orgId: string) {
-    return this.organizationsService.remove(userId, orgId);
+  remove(@Param('orgId') orgId: string) {
+    return this.organizationsService.remove(orgId);
   }
 }
