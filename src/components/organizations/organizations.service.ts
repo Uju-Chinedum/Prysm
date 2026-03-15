@@ -16,7 +16,7 @@ import { SafeOrganization } from 'src/types/service';
 import { AppUtils, DBUtils } from 'src/common/utils';
 import { PaginationDto } from 'src/common/dto';
 import { InviteUserDto } from './dto/invite-user.dto';
-import { EmailService } from 'src/common/utils/email.service';
+import { EmailService } from 'src/components/email/email.service';
 
 @Injectable()
 export class OrganizationsService {
