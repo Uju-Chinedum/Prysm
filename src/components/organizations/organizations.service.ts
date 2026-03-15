@@ -168,7 +168,11 @@ export class OrganizationsService {
     return AppUtils.successResponse('Organization Deleted Successfully', null);
   }
 
-  async inviteUser(userId: string, orgId: string, dto: InviteUserDto) {
+  async inviteUser(
+    userId: string,
+    orgId: string,
+    dto: InviteUserDto,
+  ): Promise<AppResponse<{ inviteUrl: string }>> {
     const { email, role } = dto;
 
     const member = await this.prisma.membership.findFirst({
@@ -210,5 +214,43 @@ export class OrganizationsService {
     }
 
     return AppUtils.successResponse('Member Invitation Sent', { inviteUrl });
+  }
+
+  async acceptInvite(
+    userId: string,
+    token: string,
+  ): Promise<AppResponse<SafeOrganization>> {
+    const invite = await this.prisma.organizationInvitation.findUnique({
+      where: { token },
+    });
+
+    if (!invite) throw new BadRequestException('Invalid Invite');
+    if (invite.accepted) throw new BadRequestException('Invite Already Used');
+    if (invite.expiresAt < new Date())
+      throw new BadRequestException('Invite Expired');
+
+    await this.prisma.$transaction([
+      this.prisma.membership.create({
+        data: {
+          userId,
+          organizationId: invite.organizationId,
+          role: invite.role,
+        },
+      }),
+
+      this.prisma.organizationInvitation.update({
+        where: { id: invite.id },
+        data: { accepted: true },
+      }),
+    ]);
+
+    const organization = await this.prisma.organization.findFirst({
+      where: { id: invite.organizationId },
+    });
+
+    return AppUtils.successResponse(
+      'Joined Organization Successfully',
+      organization!,
+    );
   }
 }

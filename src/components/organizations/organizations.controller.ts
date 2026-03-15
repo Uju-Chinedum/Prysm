@@ -18,6 +18,7 @@ import { AuthGuard_ } from '../auth/guard';
 import { CurrentUser } from '../auth/decorator';
 import { PaginationDto } from 'src/common/dto';
 import { Roles, RolesGuard } from 'src/common/guards';
+import { InviteUserDto } from './dto/invite-user.dto';
 
 @UseGuards(AuthGuard_)
 @Controller('api/v1/organizations')
@@ -54,6 +55,67 @@ export class OrganizationsController {
     @Query() paginationDto: PaginationDto,
   ) {
     return this.organizationsService.findAllForUser(id, paginationDto);
+  }
+
+  @Post('invites/:token/accept')
+  @ApiOperation({ summary: 'Accept an organization invite' })
+  @ApiParam({
+    name: 'token',
+    description: 'Organization invitation token',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Joined Organization Successfully',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'User not authenticated',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid Invite',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invite Already Used',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invite Expired',
+  })
+  async acceptInvite(
+    @CurrentUser('id') userId: string,
+    @Param('token') token: string,
+  ) {
+    return this.organizationsService.acceptInvite(userId, token);
+  }
+
+  @Post(':orgId/invite')
+  @Roles('OWNER', 'ADMIN')
+  @ApiOperation({ summary: 'Invite a user to an organization' })
+  @ApiParam({
+    name: 'orgId',
+    description: 'ID of the organization to retrieve',
+  })
+  @ApiBody({ type: InviteUserDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Member Invitation Sent.',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'User not authenticated',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'You are not a member of this organization',
+  })
+  async inviteUser(
+    @CurrentUser('id') userId: string,
+    @Param('orgId') orgId: string,
+    @Body() dto: InviteUserDto,
+  ) {
+    return this.organizationsService.inviteUser(userId, orgId, dto);
   }
 
   @Get(':orgId')

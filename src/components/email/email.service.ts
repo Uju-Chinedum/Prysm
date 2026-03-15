@@ -18,25 +18,28 @@ export class EmailService {
     const oAuth2Client = new google.auth.OAuth2(
       clientId,
       clientSecret,
-      'https://developers.google.com/oauthplayground', // redirect URL for dev
+      'http://localhost:5000/api/v1/authorize/callback', // redirect URL for dev
     );
 
     oAuth2Client.setCredentials({ refresh_token: refreshToken });
 
-    const accessTokenResponse = await oAuth2Client.getAccessToken();
-    if (!accessTokenResponse?.token) {
-      throw new Error('Failed to obtain access token');
-    }
+    // const accessTokenResponse = await oAuth2Client.getAccessToken();
+    // if (!accessTokenResponse?.token) {
+    //   throw new Error('Failed to obtain access token');
+    // }
 
     return nodemailer.createTransport({
-      service: 'gmail',
+      // service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
       auth: {
         type: 'OAuth2',
         user,
         clientId,
         clientSecret,
         refreshToken,
-        accessToken: accessTokenResponse.token,
+        // accessToken: accessTokenResponse.token,
       },
       tls: { rejectUnauthorized: false }, // dev only
     });
