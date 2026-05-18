@@ -135,7 +135,7 @@ export class OrganizationsService {
         where: {
           id: orgId,
           memberships: {
-            some: { userId },
+            some: { userId, role: { in: ['OWNER', 'ADMIN'] } },
           },
         },
         data: updateOrganizationDto,
@@ -156,9 +156,9 @@ export class OrganizationsService {
     });
   }
 
-  async remove(orgId: string): Promise<AppResponse<null>> {
+  async remove(userId: string, orgId: string): Promise<AppResponse<null>> {
     const deleted = await this.prisma.organization.deleteMany({
-      where: { id: orgId },
+      where: { id: orgId, memberships: { some: { userId, role: 'OWNER' } } },
     });
 
     if (!deleted.count) {
@@ -179,6 +179,7 @@ export class OrganizationsService {
       where: {
         userId,
         organizationId: orgId,
+        role: { in: ['OWNER', 'ADMIN'] },
       },
     });
     if (!member) {

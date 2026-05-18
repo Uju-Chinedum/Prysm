@@ -137,7 +137,6 @@ export class OrganizationsController {
     return this.organizationsService.findOne(userId, orgId);
   }
 
-  @Delete(':orgId')
   @Roles('OWNER', 'ADMIN')
   @Patch(':orgId')
   @ApiOperation({ summary: 'Update an existing organization' })
@@ -188,7 +187,7 @@ export class OrganizationsController {
     status: 404,
     description: 'Organization not found',
   })
-  remove(@Param('orgId') orgId: string) {
-    return this.organizationsService.remove(orgId);
+  remove(@CurrentUser('id') userId: string, @Param('orgId') orgId: string) {
+    return this.organizationsService.remove(userId, orgId);
   }
 }
